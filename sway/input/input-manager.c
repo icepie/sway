@@ -240,6 +240,28 @@ static void handle_new_input(struct wl_listener *listener, void *data) {
 	sway_log(SWAY_DEBUG, "adding device: '%s'",
 		input_device->identifier);
 
+	// Apply default calibration matrix for ILITEK touch devices
+	if (strstr(input_device->identifier, "ILITEK") != NULL) {
+		struct input_config *ilitek_config = new_input_config(input_device->identifier);
+		if (ilitek_config) {
+			ilitek_config->calibration_matrix.configured = true;
+			ilitek_config->calibration_matrix.matrix[0] = 0.0f;
+			ilitek_config->calibration_matrix.matrix[1] = 1.0f;
+			ilitek_config->calibration_matrix.matrix[2] = 0.0f;
+			ilitek_config->calibration_matrix.matrix[3] = -1.0f;
+			ilitek_config->calibration_matrix.matrix[4] = 0.0f;
+			ilitek_config->calibration_matrix.matrix[5] = 1.0f;
+			
+			// Store the configuration
+			char *error = NULL;
+			ilitek_config = store_input_config(ilitek_config, &error);
+			if (ilitek_config) {
+				sway_log(SWAY_DEBUG, "Applied default calibration matrix for ILITEK device: %s",
+					input_device->identifier);
+			}
+		}
+	}
+
 	apply_input_type_config(input_device);
 
 #if WLR_HAS_LIBINPUT_BACKEND
